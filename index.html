@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seeing Through Circuits: Faithful Mechanistic Interpretability for Vision Transformers</title>
+<meta name="description" content="Vi-CD: Automatic Visual Circuit Discovery. Faithful, sparse, edge-based computational circuits for Vision Transformers, enabling classification analysis and mechanistic steering against typographic attacks in CLIP.">
+
+<!-- Open Graph / social preview -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Seeing Through Circuits: Faithful Mechanistic Interpretability for Vision Transformers">
+<meta property="og:description" content="Vi-CD recovers faithful, up-to-10x-sparser edge-based circuits from Vision Transformers, and uses them for mechanistic steering against typographic attacks in CLIP.">
+<meta property="og:image" content="images/teaser.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f5fb;
+    --surface-border: #e6e3f2;
+    --text: #1c1b22;
+    --text-soft: #55525f;
+    --text-faint: #86828f;
+    --accent: #6a3fb5;
+    --accent-soft: #efe9fa;
+    --accent-border: #d9ccf3;
+    --code-bg: #f4f3f8;
+    --code-text: #2c2a33;
+    --rule: linear-gradient(90deg, #6a3fb5, #b58a3f 55%, #5b86c9);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14131a;
+      --surface: #1d1b25;
+      --surface-border: #2f2c3c;
+      --text: #ececf1;
+      --text-soft: #b7b3c2;
+      --text-faint: #837f90;
+      --accent: #b79cf0;
+      --accent-soft: #241f33;
+      --accent-border: #3b3352;
+      --code-bg: #1b1a22;
+      --code-text: #d7d4df;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  .wrap { max-width: 840px; margin: 0 auto; padding: 46px 22px 0; position: relative; }
+
+  /* ---------- ECCV corner logo ---------- */
+  .eccv-corner {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    width: 118px;
+    line-height: 0;
+  }
+  .eccv-corner img { width: 100%; height: auto; display: block; }
+  @media (max-width: 560px) {
+    .wrap { padding-top: 38px; }
+    .eccv-corner { width: 88px; top: 10px; right: 12px; }
+  }
+
+  /* ---------- hero teaser (below the title, no caption) ---------- */
+  .hero-teaser { max-width: 600px; margin: 22px auto 6px; }
+
+  /* ---------- header ---------- */
+  header { padding: 22px 0 30px; text-align: center; }
+  h1 {
+    font-size: clamp(1.6rem, 3.2vw + 1rem, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin: 0 0 22px;
+    font-weight: 700;
+  }
+  .venue {
+    display: inline-block;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+    padding: 4px 13px;
+    margin-bottom: 22px;
+  }
+  .authors {
+    font-size: 1.05rem;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+  .authors a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--accent-border); }
+  .authors a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .affil { color: var(--text-soft); font-size: 0.97rem; margin: 0 0 26px; }
+  .affil sup { color: var(--accent); }
+
+  /* ---------- link buttons ---------- */
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 17px;
+    border-radius: 999px;
+    background: var(--text);
+    color: var(--bg);
+    text-decoration: none;
+    font-size: 0.93rem;
+    font-weight: 600;
+    border: 1px solid var(--text);
+    transition: transform .08s ease, opacity .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+  .btn svg { width: 17px; height: 17px; fill: currentColor; }
+  .btn.secondary { background: transparent; color: var(--text); border-color: var(--surface-border); }
+
+  /* ---------- rule ---------- */
+  .rule { height: 3px; background: var(--rule); border: 0; border-radius: 2px; margin: 44px 0; opacity: .9; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 30px 0; }
+  figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    background: #fff;
+  }
+  figcaption {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-top: 12px;
+    line-height: 1.55;
+  }
+  figcaption b { color: var(--text); }
+
+  /* ---------- sections ---------- */
+  section { margin: 40px 0; }
+  h2 {
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2::before {
+    content: "";
+    width: 9px; height: 9px;
+    border-radius: 2px;
+    background: var(--accent);
+    display: inline-block;
+    flex: none;
+    transform: translateY(-1px);
+  }
+  p { margin: 0 0 16px; }
+  .lead { color: var(--text); }
+  a.inline { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-border); }
+  a.inline:hover { border-bottom-color: var(--accent); }
+
+  ul.clean { list-style: none; padding: 0; margin: 0; }
+  ul.clean li {
+    position: relative;
+    padding: 12px 0 12px 30px;
+    border-top: 1px solid var(--surface-border);
+    color: var(--text-soft);
+  }
+  ul.clean li:last-child { border-bottom: 1px solid var(--surface-border); }
+  ul.clean li strong { color: var(--text); font-weight: 650; }
+  ul.clean li::before {
+    content: "";
+    position: absolute;
+    left: 4px; top: 20px;
+    width: 12px; height: 2px;
+    background: var(--accent);
+  }
+
+  .keywords { font-size: 0.92rem; color: var(--text-faint); }
+
+  /* ---------- bibtex ---------- */
+  .bibtex-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  #copyBtn {
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--surface-border);
+    background: var(--surface);
+    color: var(--text-soft);
+    cursor: pointer;
+  }
+  #copyBtn:hover { color: var(--accent); border-color: var(--accent-border); }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    margin: 12px 0 0;
+  }
+
+  footer {
+    margin: 60px 0 48px;
+    padding-top: 22px;
+    border-top: 1px solid var(--surface-border);
+    font-size: 0.85rem;
+    color: var(--text-faint);
+    text-align: center;
+  }
+  footer a { color: var(--text-faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="eccv-corner" href="https://eccv.ecva.net/virtual/2026/poster/5516" target="_blank" rel="noopener" aria-label="ECCV 2026 — Malmö, Sweden">
+    <img src="images/eccv2026.svg" alt="ECCV 2026 — Malmö, Sweden — September 8–12">
+  </a>
+
+  <header>
+    <div class="venue">ECCV&nbsp;2026 poster &nbsp;·&nbsp; arXiv&nbsp;2604.14477</div>
+    <h1>Seeing Through Circuits:<br>Faithful Mechanistic Interpretability<br>for Vision Transformers</h1>
+
+    <figure class="hero-teaser">
+      <img src="images/teaser.png" alt="Vi-CD discovers sparse, coloured edge-based circuits in a Vision Transformer computation graph (left) and uses them for mechanistic steering that corrects a CLIP misreading of an image (right).">
+    </figure>
+
+    <p class="authors">
+      <a href="https://scholar.google.com/citations?user=wkWwc-EAAAAJ" target="_blank" rel="noopener">Nina&nbsp;Żukowska</a><sup>1</sup>,
+      <a href="https://wolfstam.github.io/" target="_blank" rel="noopener">Wolfgang&nbsp;Stammer</a><sup>1</sup>,
+      <a href="https://www.mpi-inf.mpg.de/departments/computer-vision-and-machine-learning/people/bernt-schiele" target="_blank" rel="noopener">Bernt&nbsp;Schiele</a><sup>1</sup>,
+      <a href="https://www.mpi-inf.mpg.de/departments/computer-vision-and-machine-learning/people/jonas-fischer" target="_blank" rel="noopener">Jonas&nbsp;Fischer</a><sup>1</sup>
+    </p>
+    <p class="affil"><sup>1</sup>&nbsp;Max Planck Institute for Informatics (MPI-INF), Saarbrücken</p>
+
+    <nav class="links">
+      <a class="btn" href="https://arxiv.org/pdf/2604.14477" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 13h8v1.5H8V13zm0 3.5h8V18H8v-1.5zM8 9.5h5V11H8V9.5z"/></svg>
+        Paper (PDF)
+      </a>
+      <a class="btn secondary" href="https://arxiv.org/abs/2604.14477" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h12v2H3v-2z"/></svg>
+        arXiv
+      </a>
+      <!-- Code not released yet. When it is, add:
+      <a class="btn secondary" href="CODE_URL" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.5 4 12l5.5-4.5L11 9l-3 3 3 3-1.5 1.5zm5 0L13 15l3-3-3-3 1.5-1.5L20 12l-5.5 4.5z"/></svg>
+        Code
+      </a> -->
+      <a class="btn secondary" href="#bibtex">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6V2zm8 1.5V8h4.5L14 3.5zM8.5 12h7v1.5h-7V12zm0 3.5h7V17h-7v-1.5z"/></svg>
+        BibTeX
+      </a>
+    </nav>
+  </header>
+
+  <hr class="rule">
+
+  <section id="abstract">
+    <h2>Abstract</h2>
+    <p class="lead">
+      Transparency of neural networks' internal reasoning is at the heart of interpretability research,
+      adding to trust, safety, and understanding of these models. The field of mechanistic interpretability
+      has recently focused on studying task-specific computational graphs, defined by connections
+      (<i>edges</i>) between model components. Such edge-based circuits have been defined in the context of
+      large language models, yet vision-based approaches so far only consider <i>neuron</i>-based circuits.
+      These tell <i>which</i> information is encoded, but not <i>how</i> it is routed through the complex
+      wiring of a neural network. In this work, we investigate whether useful mechanistic circuits can be
+      identified through computational graphs in vision transformers. We propose an effective method for
+      <strong>Automatic Visual Circuit Discovery (Vi-CD)</strong> that recovers class-specific circuits for
+      classification, identifies circuits underlying typographic attacks in CLIP, and discovers circuits that
+      lend themselves for steering to correct harmful model behaviour. Overall, we find that insightful and
+      actionable edge-based circuits can be recovered from vision transformers, adding transparency to the
+      internal computations of these models.
+    </p>
+    <p class="keywords">
+      <b>Keywords:</b> Mechanistic Interpretability · Visual Circuits · Vision Transformers ·
+      Typographic Attacks · Activation Steering
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <section id="method">
+    <h2>How Vi-CD works</h2>
+    <p>
+      Vi-CD casts circuit discovery as <strong>edge selection over the residual-stream dependency graph</strong>
+      of a Vision Transformer: nodes are attention heads and MLP blocks, and edges are the additive residual
+      contributions passed between them. A circuit is the minimal subset of edges that preserves the model's
+      behaviour on a task.
+    </p>
+    <p>
+      To make this tractable and meaningful for large-scale vision models, Vi-CD combines three ingredients:
+      a <strong>corrupted-input construction</strong> that removes class-specific evidence via a
+      segmentation-and-inpainting pipeline while keeping image statistics intact; an <strong>online caching
+      mechanism</strong> that stores clean and corrupted activations so every candidate edge can be evaluated
+      in a single forward pass; and <strong>edge-level activation patching</strong>, which replaces the
+      contribution along an edge with its corrupted activation and keeps the edge only if removing it barely
+      changes the output. Circuits are then validated for <i>faithfulness</i> — restricting computation to the
+      circuit must retain task performance.
+    </p>
+    <figure>
+      <img src="images/method.png" alt="Three-panel overview of Vi-CD: create dataset (select target signal, segment and inpaint, build clean/corrupted pairs); build corrupted and online cache; build faithful circuit by patching each edge and deciding membership from an edge metric threshold.">
+      <figcaption>
+        <b>Figure 2. Vi-CD: circuit discovery in vision computation graphs.</b>
+        <b>Left:</b> construction of corrupted inputs that remove class-specific information via a
+        segmentation-and-inpainting pipeline. <b>Middle:</b> the model as a directed graph of attention heads
+        and MLPs, with an online cache of clean and corrupted activations. <b>Right:</b> activation patching —
+        contributions along candidate edges are swapped for clean activations while non-circuit edges keep
+        corrupted activations, isolating faithful circuits via a per-edge metric threshold&nbsp;τ.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="contributions">
+    <h2>Contributions</h2>
+    <ul class="clean">
+      <li><strong>Edge-based circuit discovery for Vision Transformers.</strong> Vi-CD brings computational-graph
+        mechanistic interpretability — so far demonstrated mainly in large language models — to the vision domain
+        for the first time.</li>
+      <li><strong>Faithful and up to 10&times; sparser.</strong> Recovered circuits capture class-specific
+        computational pathways with a small fraction of the model's total edges, while preserving task accuracy.</li>
+      <li><strong>Mechanistic steering.</strong> Deactivating discovered circuits defends CLIP against
+        typographic attacks and corrects misclassifications between confusable class pairs — evidence that the
+        circuits capture genuine computation, not statistical artifacts.</li>
+    </ul>
+  </section>
+
+  <hr class="rule">
+
+  <section id="bibtex">
+    <h2>BibTeX</h2>
+    <div class="bibtex-head">
+      <p style="margin:0;color:var(--text-soft);font-size:.92rem;">If you find this work useful, please cite:</p>
+      <button id="copyBtn" type="button">Copy</button>
+    </div>
+    <pre id="bib">@inproceedings{zukowska2026seeing,
+  title     = {Seeing Through Circuits: Faithful Mechanistic
+               Interpretability for Vision Transformers},
+  author    = {{\.Z}ukowska, Nina and Stammer, Wolfgang and
+               Schiele, Bernt and Fischer, Jonas},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2026}
+}</pre>
+  </section>
+
+  <footer>
+    <p>Paper released under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+    Page content follows the paper; figures are extracted from the manuscript.</p>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('copyBtn');
+    var bib = document.getElementById('bib');
+    if (!btn || !bib) return;
+    btn.addEventListener('click', function () {
+      var text = bib.innerText;
+      var done = function () {
+        btn.textContent = 'Copied ✓';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+      } else {
+        fallback(text, done);
+      }
+    });
+    function fallback(text, done) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  })();
+</script>
+</body>
+</html>
